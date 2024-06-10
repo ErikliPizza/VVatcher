@@ -4,7 +4,7 @@ import Home from '../views/Home.vue'; // example view component
 import SignIn from "../views/SignIn.vue";
 import SignUp from "../views/SignUp.vue";
 import ForgotPassword from "../views/ForgotPassword.vue";
-
+import Targets from "../views/Targets.vue";
 const routes = [
     {
         path: '/',
@@ -29,6 +29,11 @@ const routes = [
                 path: 'forgot-password',
                 name: 'Forgot Password',
                 component: ForgotPassword
+            },
+            {
+                path: 'targets',
+                name: 'Targets',
+                component: Targets
             }
         ]
     }

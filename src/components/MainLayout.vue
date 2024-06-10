@@ -37,7 +37,7 @@ watch(() => user.value, (newValue) => {
     if (!newValue) {
       router.push({ name: 'Sign In' }); // Redirect to the sign-in route
     } else {
-      router.push({ name: 'Home' }); // Redirect to the home route
+      router.push({ name: 'Targets' }); // Redirect to the home route
     }
   }
 });
@@ -61,7 +61,19 @@ watch(() => user.value, (newValue) => {
     </template>
     <template v-else>
       <v-app-bar v-if="user">
-        <v-app-bar-title>{{ userName }}</v-app-bar-title>
+        <v-app-bar-nav-icon>
+          <v-icon icon="mdi-face-woman-profile"></v-icon>
+          <v-tooltip
+              activator="parent"
+              location="end"
+          >{{ userName }}</v-tooltip>
+        </v-app-bar-nav-icon>
+        <v-spacer></v-spacer>
+        <div>
+          <v-btn @click="goTo('/targets')" class="me-5" :color="router.currentRoute.value.name === 'Targets' ? 'indigo-lighten-4' : 'indigo-lighten-0'" :elevation="router.currentRoute.value.name === 'Targets' ? '24' : '0'" :variant="router.currentRoute.value.name === 'Targets' ? 'tonal' : 'plain'">Targets</v-btn>
+          <v-btn @click="goTo('/signup')" class="ms-5" :color="router.currentRoute.value.name === 'Sign Up' ? 'indigo-lighten-4' : 'indigo-lighten-0'" :variant="router.currentRoute.value.name === 'Sign Up' ? 'tonal' : 'plain'">Sign Up</v-btn>
+        </div>
+        <v-spacer></v-spacer>
         <template v-slot:append>
           <v-btn icon="mdi-logout" @click="logout"></v-btn>
         </template>
@@ -71,8 +83,8 @@ watch(() => user.value, (newValue) => {
         <v-spacer></v-spacer> <!-- Add another spacer to push buttons to the center -->
         <div>
           <v-spacer></v-spacer>
-          <v-btn @click="goTo('/signin')" class="me-5" :variant="router.currentRoute.value.name === 'Sign In' ? 'tonal' : 'outlined'">Sign In</v-btn>
-          <v-btn @click="goTo('/signup')" class="ms-5" :variant="router.currentRoute.value.name === 'Sign Up' ? 'tonal' : 'outlined'">Sign Up</v-btn>
+          <v-btn @click="goTo('/signin')" class="ms-5" :color="router.currentRoute.value.name === 'Sign In' ? 'indigo-lighten-4' : 'indigo-lighten-0'" :variant="router.currentRoute.value.name === 'Sign In' ? 'tonal' : 'plain'">Sign In</v-btn>
+          <v-btn @click="goTo('/signup')" class="ms-5" :color="router.currentRoute.value.name === 'Sign Up' ? 'indigo-lighten-4' : 'indigo-lighten-0'" :variant="router.currentRoute.value.name === 'Sign Up' ? 'tonal' : 'plain'">Sign Up</v-btn>
         </div>
         <v-spacer></v-spacer> <!-- Add another spacer to push buttons to the center -->
       </v-app-bar>
