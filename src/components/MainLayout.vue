@@ -71,7 +71,7 @@ watch(() => user.value, (newValue) => {
         <v-spacer></v-spacer>
         <div>
           <v-btn @click="goTo('/targets')" class="me-5" :color="router.currentRoute.value.name === 'Targets' ? 'indigo-lighten-4' : 'indigo-lighten-0'" :elevation="router.currentRoute.value.name === 'Targets' ? '24' : '0'" :variant="router.currentRoute.value.name === 'Targets' ? 'tonal' : 'plain'">Targets</v-btn>
-          <v-btn @click="goTo('/signup')" class="ms-5" :color="router.currentRoute.value.name === 'Sign Up' ? 'indigo-lighten-4' : 'indigo-lighten-0'" :variant="router.currentRoute.value.name === 'Sign Up' ? 'tonal' : 'plain'">Sign Up</v-btn>
+          <v-btn @click="goTo('/shows')" class="ms-5" :color="router.currentRoute.value.name === 'Shows' ? 'indigo-lighten-4' : 'indigo-lighten-0'" :variant="router.currentRoute.value.name === 'Shows' ? 'tonal' : 'plain'">Shows</v-btn>
         </div>
         <v-spacer></v-spacer>
         <template v-slot:append>

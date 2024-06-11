@@ -5,6 +5,8 @@ import SignIn from "../views/SignIn.vue";
 import SignUp from "../views/SignUp.vue";
 import ForgotPassword from "../views/ForgotPassword.vue";
 import Targets from "../views/Targets.vue";
+import Shows from "../views/Shows.vue";
+
 const routes = [
     {
         path: '/',
@@ -34,6 +36,11 @@ const routes = [
                 path: 'targets',
                 name: 'Targets',
                 component: Targets
+            },
+            {
+                path: 'shows',
+                name: 'Shows',
+                component: Shows
             }
         ]
     }

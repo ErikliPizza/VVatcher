@@ -2,7 +2,7 @@ import {useFirestore} from "vuefire";
 import {collection, doc, setDoc, Timestamp, onSnapshot, getDocs} from "firebase/firestore";
 import { query, orderBy, limit, deleteDoc } from "firebase/firestore";
 
-import {ref} from "vue";
+import {capitalize, ref} from "vue";
 import {useGenAi} from "./src/composables/useGenAi.js";
 import "./src/firebaseconfig.js"
 
@@ -96,10 +96,11 @@ async function handleStore(url) {
     try {
         if (user.value) {
             // Initialize the model
-            const model = await useGenAi('gemini-pro');
-
+            const model = await useGenAi('gemini-1.5-pro-latest');
+            const parsedUrl = new URL(url);
+            const path = parsedUrl.pathname;
             // Generate prompt for the AI model
-            const prompt = `Please extract and format the TV show information from the following URL: ${url}. The response should be in this format without any extra text: Name: "{TV Show Name} Value: {season}x{episode}"`;
+            const prompt = `Please extract and format the TV show information from the following text: "${path.toUpperCase()}". The response should be in this format without any extra text: Name: "{TV Show Name} Value: {season}x{episode}"`;
 
             // Get the result from the AI model
             const result = await model.generateContent(prompt);
@@ -108,13 +109,17 @@ async function handleStore(url) {
 
             const regexPattern = /Name:\s*(.+?)\s*Value:\s*(.+)/;
             const matches = text.match(regexPattern);
-
             if (matches && matches.length === 3) {
-                const name = matches[1].trim();
+                const name = manipulateString(matches[1]);
                 const value = matches[2].trim();
 
                 const userRef = doc(db, 'users', user.value);
                 const showRef = doc(collection(userRef, 'shows'), name);
+                await setDoc(showRef, {
+                    timestamp: new Date(),
+                    title: name
+                    }, { merge: true }); // Merge avoids overwriting
+                console.error(name);
                 const episodesCollectionRef = collection(showRef, 'episodes');
 
                 // Get the current episodes
@@ -146,4 +151,23 @@ async function handleStore(url) {
     } catch (error) {
         console.error("An error occurred:", error);
     }
+}
+
+function manipulateString(input) {
+    // Step 1: Delete spaces at start and end
+    let manipulatedString = input.trim();
+
+    // Any Character -> English Characters
+    manipulatedString = manipulatedString.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+    // Step 2: Replace special characters with space
+    manipulatedString = manipulatedString.replace(/[^\w\s]/g, ' ');
+
+    // Step 3: Delete extra spaces between words
+    manipulatedString = manipulatedString.replace(/\s+/g, ' ');
+
+    // Step 4: Make it uppercase
+    manipulatedString = manipulatedString.toUpperCase();
+
+    return manipulatedString.trim();
 }
