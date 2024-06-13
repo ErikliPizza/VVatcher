@@ -37,7 +37,7 @@ watch(() => user.value, (newValue) => {
     if (!newValue) {
       router.push({ name: 'Sign In' }); // Redirect to the sign-in route
     } else {
-      router.push({ name: 'Targets' }); // Redirect to the home route
+      router.push({ name: 'Shows' }); // Redirect to the home route
     }
   }
 });
@@ -75,7 +75,19 @@ watch(() => user.value, (newValue) => {
         </div>
         <v-spacer></v-spacer>
         <template v-slot:append>
-          <v-btn icon="mdi-logout" @click="logout"></v-btn>
+          <v-menu>
+            <template v-slot:activator="{ props }">
+              <v-btn  icon="mdi-cog-sync-outline" v-bind="props" />
+            </template>
+            <v-list>
+              <v-list-item append-icon="mdi-logout" @click="logout">
+                <v-list-item-title>Logout</v-list-item-title>
+              </v-list-item>
+              <v-list-item append-icon="mdi-api" @click="goTo('/settings')">
+                <v-list-item-title>API Key</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </template>
       </v-app-bar>
 

@@ -11,7 +11,7 @@
             :loading="loading"
             append-inner-icon="mdi-magnify"
             density="compact"
-            label="Search templates"
+            label="Search shows"
             variant="solo"
             hide-details
             single-line
@@ -27,45 +27,131 @@
 
         <v-expansion-panel
             density="compact"
-            v-for="(item, i) in shows"
+            v-for="(show, i) in shows"
             :key="i"
-            :value="item"
+            :value="show"
         >
           <v-expansion-panel-title disable-icon-rotate>
-            {{ item.id }}
+            <div class="text-center">
+              <v-menu
+                  v-model="show.menu"
+                  :close-on-content-click="false"
+                  location="end"
+              >
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                      color="indigo"
+                      icon="mdi-plus-circle"
+                      variant="plain"
+                      v-bind="props"
+                  >
+                  </v-btn>
+                </template>
+
+                <v-card min-width="300">
+                  <div class="d-flex justify-center align-center">
+                    <v-sheet class="ma-2 pa-2">
+                      <v-text-field
+                          v-model="s"
+                          density="compact"
+                          variant="outlined"
+                          :counter="10"
+                          label="S"
+                          hide-details
+                          required
+                          width="50"
+                          height="50"
+                          @input="validateNumberInput('s', $event)"
+                      ></v-text-field>
+                    </v-sheet>
+                    <v-sheet>
+                      x
+                    </v-sheet>
+                    <v-sheet class="ma-2 pa-2">
+                      <v-text-field
+                          v-model="e"
+                          density="compact"
+                          variant="outlined"
+                          :counter="10"
+                          label="E"
+                          hide-details
+                          required
+                          width="50"
+                          height="50"
+                          @input="validateNumberInput('e', $event)"
+                      ></v-text-field>
+                    </v-sheet>
+                  </div>
+
+                  <v-divider></v-divider>
+
+
+                  <v-card-actions>
+                    <v-spacer></v-spacer>
+
+                    <v-btn
+                        variant="text"
+                        @click="show.menu = false"
+                    >
+                      Cancel
+                    </v-btn>
+                    <v-btn
+                        color="primary"
+                        variant="text"
+                        @click="addEp(show.id), show.menu = false"
+                    >
+                      Save
+                    </v-btn>
+                  </v-card-actions>
+                </v-card>
+              </v-menu>
+            </div>
+            {{ show.id }}
             <template v-slot:actions>
-              <v-icon color="error" icon="mdi-delete-sweep" @click="deleteShow(item.id)"/>
+              <v-icon color="error" icon="mdi-delete-sweep" @click="deleteShow(show.id)"/>
             </template>
           </v-expansion-panel-title>
           <v-expansion-panel-text>
             <v-list density="compact">
               <v-list-item
                   density="compact"
-                  v-for="(item, i) in item.episodes"
-                  :key="i"
-                  :value="item"
+                  v-for="(ep, j) in show.episodes"
+                  :key="j"
+                  :value="ep"
                   color="primary"
                   variant="plain"
               >
                 <template v-slot:title>
                   <div class="d-flex justify-space-between align-center">
-                    <v-chip color="primary">
-                      {{ item.indicator }}
-                    </v-chip>
                     <div>
-                      {{ toDMYHM(item.timestamp.toDate()) }}
+                      <v-chip color="primary">
+                        <v-tooltip
+                            activator="parent"
+                            location="top"
+                        >{{ toDMYHM(ep.timestamp.toDate()) }}</v-tooltip>
+                        {{ ep.indicator }}
+                      </v-chip>
+                      <v-btn v-if="ep.url" variant="plain">
+                        <v-icon icon="mdi-location-enter"></v-icon>
+                        <v-tooltip
+                            activator="parent"
+                            location="top"
+                        >{{ ep.url }}</v-tooltip>
+                      </v-btn>
                     </div>
+
                     <div>
+
                       <v-btn
                           color="grey-lighten-1"
                           icon="mdi-delete-sweep"
                           variant="text"
+                          @click="deleteEp(show.id, ep.id)"
                       ></v-btn>
                     </div>
                   </div>
                 </template>
                 <div class="d-flex justify-center align-center">
-                  <hr style="height:1px;border-width:0;color:gray;background-color:gray; width: 10%;"/>
                 </div>
               </v-list-item>
             </v-list>
@@ -77,19 +163,32 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import {doc, collection, getDocs, query, orderBy, limit, where, deleteDoc, onSnapshot} from 'firebase/firestore';
+import { ref, onMounted } from 'vue';
+import {
+  doc,
+  collection,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  where,
+  deleteDoc,
+  onSnapshot,
+  setDoc
+} from 'firebase/firestore';
 import {useFirestore} from "vuefire";
 import {auth} from "../firebaseconfig.js";
 import useDateTranslator from "../composables/useDateHelper.js";
 
-const { toDMYHM, toHumanReadable } = useDateTranslator();
+const { toDMYHM } = useDateTranslator();
 
 const user = auth.currentUser;
 const shows = ref([]);
 const loading = ref(true);
 const db = useFirestore();
 const searchQuery = ref('');
+const s = ref('');
+const e = ref('');
 
 onMounted(async () => {
   try {
@@ -143,7 +242,17 @@ onMounted(async () => {
   }
 });
 
+function validateNumberInput(fieldName, event) {
+  // Remove non-numeric characters (except for the minus sign if it's the first character)
+  const sanitizedValue = event.target.value.replace(/\D/g, '');
 
+  // Update the model with the sanitized value
+  if (fieldName === 's') {
+    s.value = sanitizedValue;
+  } else if (fieldName === 'e') {
+    e.value = sanitizedValue;
+  }
+}
 const searchShows = async () => {
   if (loading.value === true) return;
   loading.value = true;
@@ -196,6 +305,64 @@ const deleteShow = async (id) => {
   }
 };
 
+const deleteEp = async (showId, episodeId) => {
+  try {
+    if (!user || !showId || !episodeId) {
+      return;
+    }
+
+    // Reference to the specific episode document
+    const userRef = doc(db, 'users', user.uid);
+    const showRef = doc(userRef, 'shows', showId);
+    const episodeRef = doc(collection(showRef, 'episodes'), episodeId);
+
+    await deleteDoc(episodeRef);
+
+    searchQuery.value = '';
+  } catch (err) {
+    searchQuery.value = '';
+    console.error(err);
+  }
+};
+
+const addEp = async (showId) => {
+  try {
+    if (!user || !showId || s.value.trim() === '' || e.value.trim() === '') {
+      return;
+    }
+    const userRef = doc(db, 'users', user.uid);
+    const showRef = doc(collection(userRef, 'shows'), showId);
+
+    const episodesCollectionRef = collection(showRef, 'episodes');
+
+    // Get the current episodes
+    const episodesQuery = query(episodesCollectionRef, orderBy('timestamp', 'desc'));
+    const querySnapshot = await getDocs(episodesQuery);
+
+    let episodes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // If there are 3 or more episodes, delete the oldest one
+    if (episodes.length >= 3) {
+      const oldestEpisode = episodes[episodes.length - 1];
+      const oldestEpisodeRef = doc(episodesCollectionRef, oldestEpisode.id);
+      await deleteDoc(oldestEpisodeRef);
+    }
+    // Add the new episode
+    const newEpisodeRef = doc(episodesCollectionRef);
+    await setDoc(newEpisodeRef, {
+      indicator: `${s.value.trim()}x${e.value.trim()}`,  // e.g., "3x4"
+      timestamp: new Date(),
+    });
+    s.value = '';
+    e.value = '';
+    searchQuery.value = '';
+  } catch (err) {
+    s.value = '';
+    e.value = '';
+    searchQuery.value = '';
+    console.error(err);
+  }
+};
+
 function manipulateString(input) {
   // Step 1: Delete spaces at start and end
   let manipulatedString = input.trim();
@@ -213,5 +380,9 @@ function manipulateString(input) {
   manipulatedString = manipulatedString.toUpperCase();
 
   return manipulatedString.trim();
+}
+
+const openTab = (url) => {
+  chrome.runtime.sendMessage({ type: 'OPENTAB', url: url });
 }
 </script>

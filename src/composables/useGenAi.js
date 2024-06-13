@@ -1,7 +1,7 @@
 import {GoogleGenerativeAI, HarmBlockThreshold, HarmCategory} from '@google/generative-ai'
 
-export const useGenAi = async (modelType) => {
-    const VITE_GOOGLE_AI_STUDIO_API_KEY = import.meta.env.VITE_GOOGLE_AI_STUDIO_API_KEY
+export const useGenAi = async (modelType, key) => {
+    const VITE_GOOGLE_AI_STUDIO_API_KEY = key;
     const safetySettings = [
         {
             category: HarmCategory.HARM_CATEGORY_HARASSMENT,

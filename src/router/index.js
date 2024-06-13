@@ -6,7 +6,7 @@ import SignUp from "../views/SignUp.vue";
 import ForgotPassword from "../views/ForgotPassword.vue";
 import Targets from "../views/Targets.vue";
 import Shows from "../views/Shows.vue";
-
+import Settings from "../views/Settings.vue";
 const routes = [
     {
         path: '/',
@@ -41,6 +41,11 @@ const routes = [
                 path: 'shows',
                 name: 'Shows',
                 component: Shows
+            },
+            {
+                path: 'settings',
+                name: 'Settings',
+                component: Settings
             }
         ]
     }

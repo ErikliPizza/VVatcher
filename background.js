@@ -57,6 +57,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             handleStore(message.url);
             sendResponse({ status: 'success' });
             break;
+        case 'OPENTAB':
+            openTab(message.url);
+            sendResponse({ status: 'success' });
+            break;
         default:
     }
 });
@@ -170,4 +174,9 @@ function manipulateString(input) {
     manipulatedString = manipulatedString.toUpperCase();
 
     return manipulatedString.trim();
+}
+
+
+function openTab (url) {
+    chrome.tabs.create({ url: url });
 }
