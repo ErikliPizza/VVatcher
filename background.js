@@ -144,7 +144,7 @@ async function handleStore(url) {
     try {
         if (user.value && key.value) {
             // Initialize the model
-            const model = await useGenAi('gemini-1.5-pro-latest');
+            const model = await useGenAi('gemini-1.5-pro-latest', key.value);
             const parsedUrl = new URL(url);
             const path = parsedUrl.pathname;
             // Generate prompt for the AI model
