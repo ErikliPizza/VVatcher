@@ -7,6 +7,7 @@ import ForgotPassword from "../views/ForgotPassword.vue";
 import Targets from "../views/Targets.vue";
 import Shows from "../views/Shows.vue";
 import Settings from "../views/Settings.vue";
+
 const routes = [
     {
         path: '/',
@@ -19,17 +20,17 @@ const routes = [
             },
             {
                 path: 'signin',
-                name: 'Sign In',
+                name: 'SignIn',
                 component: SignIn
             },
             {
                 path: 'signup',
-                name: 'Sign Up',
+                name: 'SignUp',
                 component: SignUp
             },
             {
                 path: 'forgot-password',
-                name: 'Forgot Password',
+                name: 'ForgotPassword',
                 component: ForgotPassword
             },
             {
@@ -56,6 +57,35 @@ const router = createRouter({
     routes
 });
 
+// Middleware function to check with Chrome extension
+function checkKey() {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ type: 'CHECKKEY' }, (response) => {
+            if (response.status === 'success') {
+                resolve(true);
+            } else {
+                resolve(false);
+            }
+        });
+    });
+}
+
+// Global beforeEach guard
+router.beforeEach(async (to, from, next) => {
+    // List of public routes that do not require the check
+    const publicRoutes = ['SignIn', 'SignUp', 'ForgotPassword', 'Settings'];
+
+    // If the route requires the check
+    if (!publicRoutes.includes(to.name)) {
+        const isValid = await checkKey();
+        if (!isValid) {
+            next({ name: 'Settings' });
+        } else {
+            next();
+        }
+    } else {
+        next();
+    }
+});
+
 export default router;
-
-

@@ -35,7 +35,7 @@ watch(() => user.value, (newValue) => {
   } else {
     loading.value = false;
     if (!newValue) {
-      router.push({ name: 'Sign In' }); // Redirect to the sign-in route
+      router.push({ name: 'SignIn' }); // Redirect to the sign-in route
     } else {
       router.push({ name: 'Shows' }); // Redirect to the home route
     }
@@ -95,8 +95,8 @@ watch(() => user.value, (newValue) => {
         <v-spacer></v-spacer> <!-- Add another spacer to push buttons to the center -->
         <div>
           <v-spacer></v-spacer>
-          <v-btn @click="goTo('/signin')" class="ms-5" :color="router.currentRoute.value.name === 'Sign In' ? 'indigo-lighten-4' : 'indigo-lighten-0'" :variant="router.currentRoute.value.name === 'Sign In' ? 'tonal' : 'plain'">Sign In</v-btn>
-          <v-btn @click="goTo('/signup')" class="ms-5" :color="router.currentRoute.value.name === 'Sign Up' ? 'indigo-lighten-4' : 'indigo-lighten-0'" :variant="router.currentRoute.value.name === 'Sign Up' ? 'tonal' : 'plain'">Sign Up</v-btn>
+          <v-btn @click="goTo('/signin')" class="ms-5" :color="router.currentRoute.value.name === 'SignIn' ? 'indigo-lighten-4' : 'indigo-lighten-0'" :variant="router.currentRoute.value.name === 'SignIn' ? 'tonal' : 'plain'">Sign In</v-btn>
+          <v-btn @click="goTo('/signup')" class="ms-5" :color="router.currentRoute.value.name === 'SignUp' ? 'indigo-lighten-4' : 'indigo-lighten-0'" :variant="router.currentRoute.value.name === 'SignUp' ? 'tonal' : 'plain'">Sign Up</v-btn>
         </div>
         <v-spacer></v-spacer> <!-- Add another spacer to push buttons to the center -->
       </v-app-bar>

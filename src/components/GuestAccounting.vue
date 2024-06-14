@@ -10,7 +10,7 @@ const password = defineModel('password')
 
 const router = useRouter()
 const isSignInRoute = ref(false)
-if (router.currentRoute.value.name === 'Sign In') {
+if (router.currentRoute.value.name === 'SignIn') {
   isSignInRoute.value = true
 }
 const goTo = (path) => {
@@ -81,7 +81,7 @@ const rules = {
             size="large"
             variant="tonal"
             block
-            :text="isSignInRoute ? 'Sign In' : 'Sign Up'"
+            :text="isSignInRoute ? 'SignIn' : 'SignUp'"
         >
         </v-btn>
       </v-container>
