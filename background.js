@@ -15,14 +15,18 @@ let targets = [];
 
 chrome.runtime.onStartup.addListener(() => {
     // Load user info and filters from Chrome storage at startup
-    chrome.storage.sync.get(['user', 'targets'], async (result) => {
+    chrome.storage.sync.get(['user', 'targets', 'mk'], async (result) => {
         if (result.user) {
-
             user.value = result.user;
-            const validKey = await pingGemini();
-            if (validKey === false) {
-                showNotification('Need Action', 'Your API Key could not load from local storage.')
-            }
+            pingGemini().then((response) => {
+                if (response === false) {
+                    console.error('false', result.mk);
+                } else {
+                    console.error(result.mk);
+                    key.value = result.mk;
+                }
+            });
+
             if (result.targets) {
                 targets = result.targets;
             } else {
@@ -193,7 +197,7 @@ async function handleStore(url) {
                 console.warn("Sorry, could not proceed your data.");
             }
         } else {
-            console.warn('not logged or invalid API Key');
+            console.error('not logged or invalid API Key');
         }
     } catch (error) {
         console.warn("An error occurred:", error);
@@ -228,7 +232,7 @@ function showNotification(title, message) {
     chrome.notifications.create({
         type: 'basic',
         title: title,
-        iconUrl: 'icons/notify.png',
+        iconUrl: './icons/notify.png',
         message: message
     }, (notificationId) => {
         console.info('Notification shown with ID:', notificationId);

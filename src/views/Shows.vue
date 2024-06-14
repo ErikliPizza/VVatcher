@@ -131,7 +131,7 @@
                         >{{ toDMYHM(ep.timestamp.toDate()) }}</v-tooltip>
                         {{ ep.indicator }}
                       </v-chip>
-                      <v-btn v-if="ep.url" variant="plain">
+                      <v-btn v-if="ep.url" variant="plain" @click="openTab(ep.url)">
                         <v-icon icon="mdi-location-enter"></v-icon>
                         <v-tooltip
                             activator="parent"
