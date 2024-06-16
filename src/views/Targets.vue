@@ -1,7 +1,7 @@
 <script setup>
 import {computed, onMounted, ref, watch} from 'vue';
 import { auth } from '../firebaseconfig.js';
-import {collection, doc, getDocs, setDoc, onSnapshot, deleteDoc} from 'firebase/firestore';
+import {collection, doc, setDoc, onSnapshot, deleteDoc} from 'firebase/firestore';
 import { useFirestore } from 'vuefire';
 
 const user = auth.currentUser;
@@ -118,6 +118,10 @@ const hasError = computed(() => {
 const clearError = () => {
   error.value = "";
 }
+
+const openTab = (url) => {
+  chrome.runtime.sendMessage({ type: 'OPENTAB', url: url });
+}
 </script>
 <template>
   <div>
@@ -174,6 +178,7 @@ const clearError = () => {
                 color="primary"
                 variant="plain"
                 :title="item.target"
+                @click="openTab(item.target)"
             >
               <template v-slot:append>
                 <v-btn

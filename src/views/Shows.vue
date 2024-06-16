@@ -381,7 +381,6 @@ function manipulateString(input) {
 
   return manipulatedString.trim();
 }
-
 const openTab = (url) => {
   chrome.runtime.sendMessage({ type: 'OPENTAB', url: url });
 }
