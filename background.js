@@ -1,98 +1,108 @@
-import {useFirestore} from "vuefire";
-import {collection, doc, setDoc, Timestamp, onSnapshot, getDocs} from "firebase/firestore";
+import { useFirestore } from "vuefire";
+import { collection, doc, setDoc, Timestamp, onSnapshot, getDocs } from "firebase/firestore";
 import { query, orderBy, limit, deleteDoc } from "firebase/firestore";
 
-import {ref} from "vue";
-import {useGenAi} from "./src/composables/useGenAi.js";
-import "./src/firebaseconfig.js"
+import { useGenAi } from "./src/composables/useGenAi.js";
+import "./src/firebaseconfig.js";
 
 const db = useFirestore();
 
-const user = ref();
-const key = ref();
+let user;
+let key;
 let targets = [];
+let isInitialized = false;
 
+chrome.runtime.onStartup.addListener(async () => {
+    await initialize();
+});
 
-chrome.runtime.onStartup.addListener(() => {
-    // Load user info and filters from Chrome storage at startup
-    chrome.storage.sync.get(['user', 'targets', 'mk'], async (result) => {
-        if (result.user) {
-            user.value = result.user;
-            pingGemini().then((response) => {
+// Initialize user info and filters from Chrome storage
+async function initialize() {
+    return new Promise((resolve, reject) => {
+        chrome.storage.sync.get(['user', 'targets', 'mk'], async (result) => {
+            if (result.user) {
+                user = result.user;
+                const response = await pingGemini();
                 if (response === false) {
                     console.error('false', result.mk);
                 } else {
                     console.error(result.mk);
-                    key.value = result.mk;
+                    key = result.mk;
                 }
-            });
 
-            if (result.targets) {
-                targets = result.targets;
+                if (result.targets) {
+                    targets = result.targets;
+                } else {
+                    await fetchUserFilters();
+                }
+                isInitialized = true;
+                resolve(true);
             } else {
-                fetchUserFilters();
+                chrome.storage.sync.remove(['targets', 'mk']);
+                showNotification('Need Action', 'You are not logged in.');
+                resolve(false);
             }
-        } else {
-            chrome.storage.sync.remove(['targets', 'mk']);
-            showNotification('Need Action', 'You are not logged in.')
-        }
+        });
     });
-});
+}
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     switch (message.type) {
         case 'LOGIN':
-            user.value = message.user.uid;
+            user = message.user.uid;
             // Save user info to Chrome storage
-            chrome.storage.sync.set({user: user.value}, () => {
-                console.warn('User info saved to storage', user.value);
+            chrome.storage.sync.set({ user: user }, async () => {
+                console.warn('User info saved to storage', user);
+                await fetchUserFilters();
+                sendResponse({ status: 'success' });
             });
-            // Fetch user filters
-            fetchUserFilters();
-            sendResponse({status: 'success'});
             break;
         case 'LOGOUT':
             chrome.storage.sync.remove('user', () => {
                 console.warn('User info removed from the storage.');
+                user = null;
+                sendResponse({ status: 'success' });
             });
-            user.value = null;
-            sendResponse({status: 'success'});
             break;
         case 'STOREKEY':
-            key.value = message.key;
-            chrome.storage.sync.set({mk: key.value}, () => {
-                console.warn('API Key saved to storage', key.value);
+            key = message.key;
+            chrome.storage.sync.set({ mk: key }, () => {
+                console.warn('API Key saved to storage', key);
+                sendResponse({ status: 'success' });
             });
-            sendResponse({status: 'success'});
             break;
         case 'REMOVEKEY':
             chrome.storage.sync.remove('mk', () => {
                 console.warn('API Key removed from the storage.');
+                key = null;
+                sendResponse({ status: 'success' });
             });
-            key.value = null;
-            sendResponse({status: 'success'});
             break;
         case 'CHECKKEY':
             pingGemini().then((response) => {
                 if (response === true) {
-                    sendResponse({status: 'success', key: key.value});
+                    sendResponse({ status: 'success', key: key });
                 } else {
-                    sendResponse({status: 'error'});
+                    sendResponse({ status: 'error' });
                 }
             });
             break;
         case 'FETCH_TARGET':
             fetchUserFilters();
-            sendResponse({status: 'success'});
+            sendResponse({ status: 'success' });
             break;
         case 'STORE':
-            handleStore(message.url);
-            sendResponse({status: 'success'});
+            // Ensure initialization before handling the store
+            if (isInitialized) {
+                handleStore(message.url).then(() => sendResponse({ status: 'success' }));
+            } else {
+                initialize().then(() => handleStore(message.url).then(() => sendResponse({ status: 'success' })));
+            }
             break;
         case 'OPENTAB':
             openTab(message.url);
-            sendResponse({status: 'success'});
+            sendResponse({ status: 'success' });
             break;
         default:
     }
@@ -103,52 +113,63 @@ async function pingGemini() {
     return new Promise((resolve, reject) => {
         chrome.storage.sync.get('mk', async (result) => {
             if (result.mk) {
-                key.value = result.mk;
+                key = result.mk;
                 resolve(true);
             } else {
-                key.value = null;
+                key = null;
                 resolve(false);
             }
         });
     });
 }
 
-
 // Function to fetch user filters from Firebase
-function fetchUserFilters() {
-    if (user.value) {
-
+async function fetchUserFilters() {
+    if (user) {
         // Reference to the user's targets collection
-        const targetsCollectionRef = collection(db, `users/${user.value}/targets`);
+        const targetsCollectionRef = collection(db, `users/${user}/targets`);
 
         // Fetch the initial data
-        getDocs(targetsCollectionRef).then((snapshot) => {
+        try {
+            const snapshot = await getDocs(targetsCollectionRef);
             targets = snapshot.docs.map(doc => doc.data());
             // Save filters to Chrome storage
-            chrome.storage.sync.set({ targets: targets }, () => {
-                console.info('User targets saved to storage');
-            });
-        }).catch((error) => {
-            console.info('Error fetching user targets:', error);
-        });
+            await chrome.storage.sync.set({ targets: targets });
+            console.info('User targets saved to storage');
 
-        // Set up listener for filter changes
-        onSnapshot(targetsCollectionRef, (snapshot) => {
-            targets = snapshot.docs.map(doc => doc.data());
-            chrome.storage.sync.set({ targets: targets }, () => {
-                console.info('User filters updated in storage');
+            // Set up listener for filter changes
+            onSnapshot(targetsCollectionRef, (snapshot) => {
+                targets = snapshot.docs.map(doc => doc.data());
+                chrome.storage.sync.set({ targets: targets }, () => {
+                    console.info('User filters updated in storage');
+                });
+            }, (error) => {
+                console.warn('Error listening for user targets updates:', error);
             });
-        }, (error) => {
-            console.warn('Error listening for user targets updates:', error);
-        });
+        } catch (error) {
+            console.info('Error fetching user targets:', error);
+        }
     }
 }
 
 async function handleStore(url) {
     try {
-        if (user.value && key.value) {
+        await new Promise((resolve) => {
+            chrome.storage.sync.get(['mk', 'user'], (result) => {
+                if (result.mk) {
+                    key = result.mk;
+                }
+                if (result.user) {
+                    user = result.user;
+                }
+                resolve();
+            });
+        });
+
+        console.error(user, ' - ', key);
+        if (user && key) {
             // Initialize the model
-            const model = await useGenAi('gemini-1.5-pro-latest', key.value);
+            const model = await useGenAi('gemini-1.5-pro-latest', key);
             const parsedUrl = new URL(url);
             const path = parsedUrl.pathname;
             // Generate prompt for the AI model
@@ -165,12 +186,12 @@ async function handleStore(url) {
                 const name = manipulateString(matches[1]);
                 const value = matches[2].trim();
 
-                const userRef = doc(db, 'users', user.value);
+                const userRef = doc(db, 'users', user);
                 const showRef = doc(collection(userRef, 'shows'), name);
                 await setDoc(showRef, {
                     timestamp: new Date(),
                     title: name
-                    }, { merge: true }); // Merge avoids overwriting
+                }, { merge: true }); // Merge avoids overwriting
                 const episodesCollectionRef = collection(showRef, 'episodes');
 
                 // Get the current episodes
@@ -223,7 +244,7 @@ function manipulateString(input) {
     return manipulatedString.trim();
 }
 
-function openTab (url) {
+function openTab(url) {
     chrome.tabs.create({ url: url });
 }
 
@@ -232,7 +253,7 @@ function showNotification(title, message) {
     chrome.notifications.create({
         type: 'basic',
         title: title,
-        iconUrl: './icons/notify.png',
+        iconUrl: '/icons/notify.png',
         message: message
     }, (notificationId) => {
         console.info('Notification shown with ID:', notificationId);
